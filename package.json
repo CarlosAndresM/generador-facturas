@@ -1,0 +1,24 @@
+{
+  "name": "generator-factura",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "cors": "^2.8.5",
+    "electron": "25.3.0",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.15.0",
+    "puppeteer": "^23.4.0",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "concurrently": "^7.0.0",
+    "electron-packager": "^17.1.2"
+  },
+  "scripts": {
+    "start": "concurrently \"node server/server.js\" \"electron .\"",
+    "build": "electron-packager . generator-factura --platform=win32 --arch=x64 --out=dist"
+  },
+  "main": "main.js"
+}

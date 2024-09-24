@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Tiendas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Registrar Tiendas</h1>
+    <form id="registrarTiendaForm">
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" required>
+        <label for="ubicacion">Ubicación:</label>
+        <input type="text" id="ubicacion" required>
+        <label for="codigo">Código:</label>
+        <input type="text" id="codigo" required>
+        <button type="submit">Registrar Tienda</button>
+    </form>
+    <h2>Tiendas Registradas</h2>
+    <ul id="listaTiendas"></ul>
+    <button onclick="window.location.href='index.html'">Volver</button>
+    <script src="script.js"></script>
+    <script>
+        
+// Función para registrar tiendas
+document.getElementById('registrarTiendaForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const nombre = document.getElementById('nombre').value;
+    const ubicacion = document.getElementById('ubicacion').value;
+    const codigo = document.getElementById('codigo').value;
+
+    console.log('Registrando tienda con los siguientes datos:', { nombre, ubicacion, codigo });
+
+    fetch('http://localhost:3000/agregar-tienda', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre, ubicacion, codigo }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error en la respuesta de la API');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta de la API al registrar tienda:', data);
+        showAlert('Tienda registrada');
+        cargarTiendas();
+    })
+    .catch(error => {
+        console.error('Error al registrar tienda:', error);
+        showAlert('Error al registrar la tienda');
+    });
+});
+
+function showAlert(message) {
+    const alertBox = document.createElement('div');
+    alertBox.textContent = message;
+    alertBox.style.position = 'fixed';
+    alertBox.style.top = '50%';
+    alertBox.style.left = '50%';
+    alertBox.style.transform = 'translate(-50%, -50%)';
+    alertBox.style.backgroundColor = 'white';
+    alertBox.style.padding = '20px';
+    alertBox.style.border = '1px solid black';
+    alertBox.style.zIndex = '1000';
+    document.body.appendChild(alertBox);
+
+    // Remover la alerta después de un tiempo
+    setTimeout(() => {
+        document.body.removeChild(alertBox);
+    }, 2000);
+}
+
+        
+// Función para cargar tiendas en la lista
+function cargarTiendas() {
+    console.log('Cargando lista de tiendas...');
+    fetch('http://localhost:3000/tiendas')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta de la API');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Tiendas obtenidas:', data);
+            const listaTiendas = document.getElementById('listaTiendas');
+            listaTiendas.innerHTML = '';
+            data.forEach(tienda => {
+                const li = document.createElement('li');
+                li.textContent = `${tienda.nombre} - ${tienda.ubicacion}`;
+                listaTiendas.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar tiendas:', error);
+        });
+}
+
+
+cargarTiendas()
+    </script>
+</body>
+</html>

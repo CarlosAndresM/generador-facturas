@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar Factura</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Generar Factura</h1> 
+    <form id="generarFacturaForm" enctype="multipart/form-data">
+        <div id="productos">
+            <h2>Productos</h2>
+            <div class="producto">
+                <input type="text" placeholder="Nombre del Producto" required>
+                <input type="number" placeholder="Precio" required>
+                <input type="number" placeholder="Cantidad" required>
+            </div>
+        </div>
+        <div>
+            <label for="tiendaSelect">Seleccionar Tienda:</label>
+            <select id="tiendaSelect" required></select>
+        </div>
+        <label for="evidencia">Cargar imagen de evidencia:</label>
+        <input type="file" id="evidencia" name="evidencia" accept="image/*"  required>
+        <button type="button" onclick="agregarProducto()">Agregar Producto</button>
+        <button type="submit">Generar Factura</button>
+    </form>
+    
+    <button onclick="window.location.href='index.html'">Volver</button>
+    
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            cargarTiendas();
+        });
+
+        function cargarTiendas() {
+            console.log('Cargando lista de tiendas...');
+            fetch('http://localhost:3000/tiendas')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta de la API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tiendaSelect = document.getElementById('tiendaSelect');
+                    tiendaSelect.innerHTML = ''; // Limpiar opciones existentes
+                    data.forEach(tienda => {
+                        const option = document.createElement('option');
+                        option.value = tienda.id;
+                        option.textContent = tienda.nombre;
+                        tiendaSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar tiendas:', error);
+                });
+        }
+
+        function agregarProducto() {
+            const productosDiv = document.getElementById('productos');
+            const nuevaProducto = document.createElement('div');
+            nuevaProducto.classList.add('producto');
+            nuevaProducto.innerHTML = `
+                <input type="text" placeholder="Nombre del Producto" required>
+                <input type="number" placeholder="Precio" required>
+                <input type="number" placeholder="Cantidad" required>
+                <button type="button" onclick="eliminarProducto(this)">Eliminar</button>
+            `;
+            productosDiv.appendChild(nuevaProducto);
+        }
+
+        function eliminarProducto(button) {
+            const productoDiv = button.parentElement;
+            productoDiv.remove();
+        }
+
+        document.getElementById('generarFacturaForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const productos = Array.from(document.querySelectorAll('.producto')).map(producto => {
+                return {
+                    nombre: capitalizeFirstLetter(producto.querySelector('input[type="text"]').value),
+                    precio: parseFloat(producto.querySelector('input[type="number"]:nth-child(2)').value),
+                    cantidad: parseInt(producto.querySelector('input[type="number"]:nth-child(3)').value),
+                };
+            });
+
+            const tiendaId = document.getElementById('tiendaSelect').value;
+            const evidenciaInput = document.getElementById('evidencia');
+
+            const formData = new FormData();
+            formData.append('productos', JSON.stringify(productos));
+            formData.append('tiendaId', tiendaId);
+            formData.append('evidencia', evidenciaInput.files[0]);
+
+            fetch('http://localhost:3000/generar-factura', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta de la API');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'factura.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                showAlert('Factura generada y descargada');
+                
+            })
+            .catch(error => {
+                console.error('Error al generar factura:', error);
+                showAlert('Error al generar la factura');
+            });
+        });
+
+        // Función para capitalizar la primera letra
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+        }
+
+        function showAlert(message) {
+    const alertBox = document.createElement('div');
+    alertBox.textContent = message;
+    alertBox.style.position = 'fixed';
+    alertBox.style.top = '50%';
+    alertBox.style.left = '50%';
+    alertBox.style.transform = 'translate(-50%, -50%)';
+    alertBox.style.backgroundColor = 'white';
+    alertBox.style.padding = '20px';
+    alertBox.style.border = '1px solid black';
+    alertBox.style.zIndex = '1000';
+    document.body.appendChild(alertBox);
+
+    // Remover la alerta después de un tiempo
+    setTimeout(() => {
+        document.body.removeChild(alertBox);
+    }, 2000);
+}
+
+    </script>
+</body>
+</html>

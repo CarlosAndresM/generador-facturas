@@ -1,0 +1,144 @@
+body {
+    padding: 50px;
+    font-family: Arial, sans-serif;
+}
+
+.menu {
+    margin: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+#store-form, #invoice-form {
+    margin: 20px;
+}
+/* Estilos generales */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+}
+
+h1 {
+    color: #4a90e2;
+    margin-bottom: 20px;
+}
+
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+}
+
+h2 {
+    color: #4a90e2;
+    margin-bottom: 15px;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+input[type="file"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+input[type="file"] {
+    padding: 5px;
+}
+
+button {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #357ABD;
+}
+
+button[type="submit"] {
+    background-color: #27ae60;
+}
+
+button[type="submit"]:hover {
+    background-color: #219150;
+}
+
+button[type="button"] {
+    background-color: #e74c3c;
+}
+
+button[type="button"]:hover {
+    background-color: #c0392b;
+}
+
+#productos {
+    margin-bottom: 15px;
+}
+
+.producto {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.producto input[type="text"],
+.producto input[type="number"] {
+    flex: 1;
+}
+
+.producto button {
+    flex: none;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Estilo del botón "Volver" */
+button[type="button"] {
+    background-color: #95a5a6;
+    margin-top: 20px;
+}
+
+button[type="button"]:hover {
+    background-color: #7f8c8d;
+}
+
+/* Estilo de la alerta */
+.alert {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border: 1px solid black;
+    z-index: 1000;
+}
