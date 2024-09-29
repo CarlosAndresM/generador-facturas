@@ -60,56 +60,6 @@ app.post('/agregar-producto', (req, res) => {
 });
  
 
-// app.post('/generar-factura', (req, res) => {
-//   const { productos } = req.body; // Asegúrate de recibir los productos
-
-//   // Validar que haya productos
-//   if (!productos || productos.length === 0) {
-//       return res.status(400).send({ message: 'No se han proporcionado productos.' });
-//   }
-
-//   // Generar factura con la tienda y fecha actuales
-//   const tienda_id = productos[0].tiendaId; // Usar el ID de la tienda del primer producto
-//   const fecha = new Date().toISOString(); // Fecha actual
-
-//   agregarFactura(tienda_id, fecha, (err, factura_id) => {
-//       if (err) {
-//           console.error('Error al agregar la factura:', err);
-//           return res.status(500).send({ message: 'Error al agregar la factura', error: err.message });
-//       }
-
-//       // Agregar los productos a la factura
-//       const agregarProductosPromises = productos.map(producto => {
-//           return new Promise((resolve, reject) => {
-//               agregarProducto(factura_id, producto.nombre, producto.precio, producto.cantidad, (err) => {
-//                   if (err) {
-//                       return reject(err);
-//                   }
-//                   resolve();
-//               });
-//           });
-//       });
-
-//       Promise.all(agregarProductosPromises)
-//           .then(() => {
-//               return generarFactura(factura_id, (err, pdfPath) => {
-//                   if (err) {
-//                       console.error('Error al generar el PDF:', err);
-//                       return res.status(500).send({ message: 'Error al generar la factura', error: err.message });
-//                   }
-//                   res.download(pdfPath); // Envía el archivo PDF al cliente
-//               });
-//           })
-//           .catch(err => {
-//               console.error('Error al agregar productos:', err);
-//               res.status(500).send({ message: 'Error al agregar productos a la factura', error: err.message });
-//           });
-//   });
-// });
-
-
- 
-// Configuración de multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
       cb(null, 'uploads/');
@@ -129,12 +79,11 @@ app.post('/generar-factura', upload.single('evidencia'), (req, res) => {
       return res.status(400).send({ message: 'No se han proporcionado productos.' });
   }
 
-  const tienda_id = req.body.tiendaId; // ID de la tienda
+  const tienda_id = req.body.tiendaId;
   const fecha = new Date().toISOString();
   const imagenPath = req.file ? req.file.path : null;
-  console.log(imagenPath)
+
   agregarFactura(tienda_id, fecha, imagenPath, (err, factura_id) => {
-    
       if (err) {
           console.error('Error al agregar la factura:', err);
           return res.status(500).send({ message: 'Error al agregar la factura', error: err.message });
@@ -148,8 +97,6 @@ app.post('/generar-factura', upload.single('evidencia'), (req, res) => {
           }
 
           actualizarImagenFactura(factura_id, nuevoImagenPath, (err) => {
-            console.log("nuevo imagenpath ", nuevoImagenPath)
-
               if (err) {
                   console.error('Error al actualizar la imagen en la factura:', err);
                   return res.status(500).send({ message: 'Error al actualizar la imagen', error: err.message });
@@ -168,12 +115,28 @@ app.post('/generar-factura', upload.single('evidencia'), (req, res) => {
 
               Promise.all(agregarProductosPromises)
                   .then(() => {
-                      return generarFactura(factura_id, nuevoImagenPath, (err, pdfPath) => {
+                      generarFactura(factura_id, nuevoImagenPath, (err, pdfPath) => {
                           if (err) {
                               console.error('Error al generar el PDF:', err);
                               return res.status(500).send({ message: 'Error al generar la factura', error: err.message });
                           }
-                          res.download(pdfPath); // Envía el PDF al cliente
+
+                          // Enviar el PDF y eliminarlo después
+                          res.download(pdfPath, (err) => {
+                              if (err) {
+                                  console.error('Error al enviar el PDF:', err);
+                              }
+                              
+                              // Eliminar el PDF después de enviarlo
+                              console.log("prueba de ruta antes de borrar", pdfPath)
+                              fs.unlink(pdfPath, (err) => {
+                                  if (err) {
+                                      console.error('Error al eliminar el PDF:', err);
+                                  } else {
+                                      console.log(`PDF ${pdfPath} eliminado con éxito.`);
+                                  }
+                              });
+                          });
                       });
                   })
                   .catch(err => {
@@ -207,20 +170,47 @@ app.get('/detalles-factura', (req, res) => {
   });
 });
 
+
+
+
+// Borrar una factura y eliminar la imagen asociada
 app.delete('/borrar-factura', (req, res) => {
   const { factura_id } = req.query;
-  borrarFactura(factura_id, (err) => {
+
+  // Obtener la imagen de la factura antes de borrar
+  obtenerImagenFactura(factura_id, (err, row) => {
       if (err) {
-          res.status(500).json({ error: 'Error al borrar la factura' });
-      } else {
-          res.sendStatus(200);
+          return res.status(500).send({ message: 'Error al obtener la imagen de la factura', error: err.message });
       }
+
+      const imagenPath = row ? row.imagen : null;
+
+      // Borrar la factura de la base de datos
+      borrarFactura(factura_id, (err) => {
+          if (err) {
+              return res.status(500).send({ message: 'Error al borrar la factura', error: err.message });
+          }
+
+          // Eliminar la imagen asociada si existe
+          if (imagenPath) {
+              fs.unlink(imagenPath, (err) => {
+                  if (err) {
+                      console.error('Error al eliminar la imagen:', err);
+                      return res.status(500).send({ message: 'Factura borrada, pero hubo un error al eliminar la imagen' });
+                  }
+                  console.log(`Imagen ${imagenPath} eliminada con éxito.`);
+                  res.sendStatus(200);
+              });
+          } else {
+              res.sendStatus(200);
+          }
+      });
   });
 });
 
 
-
 // Endpoint para generar PDF de una factura existente 
+ 
 app.get('/generar-pdf', (req, res) => {
   const { factura_id } = req.query;
 
@@ -240,7 +230,22 @@ app.get('/generar-pdf', (req, res) => {
               console.error('Error al generar el PDF:', err);
               return res.status(500).send({ message: 'Error al generar el PDF', error: err.message });
           }
-          res.download(pdfPath); // Envía el archivo PDF al cliente
+
+          // Envía el archivo PDF al cliente
+          res.download(pdfPath, (err) => {
+              // Eliminar el archivo PDF después de que se haya enviado
+              if (!err) {
+                  fs.unlink(pdfPath, (err) => {
+                      if (err) {
+                          console.error('Error al eliminar el archivo PDF:', err);
+                      } else {
+                          console.log('Archivo PDF eliminado:', pdfPath);
+                      }
+                  });
+              } else {
+                  console.error('Error al enviar el archivo PDF:', err);
+              }
+          });
       });
   });
 });
